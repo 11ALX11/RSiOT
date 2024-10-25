@@ -17,7 +17,7 @@ const int specAmount = 30;
 float* specDayPay;
 specTypes* types;
 
-const float budget = 1000;
+const float budget = 10000;
 
 const float specBonus = 100;
 const float brigadeBonus = 1243;
@@ -65,7 +65,7 @@ float reserveSpecs(Brigade brigade) {
 
 		if (specialists.size() < brigade.counts[i]) {
 			for (int j = 0; j < SPEC_TYPES_AMOUNT; j++) {
-				for (int k = counts[j]; k >= 0; k--) {
+				for (int k = counts[j]; k > 0; k--) {
 					reservation[j].pop_back();
 				}
 			}
@@ -93,7 +93,7 @@ float reserveSpecs(Brigade brigade) {
 
 void unreserveSpecs(Brigade brigade) {
 	for (int i = 0; i < SPEC_TYPES_AMOUNT; i++) {
-		for (int j = brigade.counts[i]; j >= 0; j--) {
+		for (int j = brigade.counts[i]; j > 0; j--) {
 			reservation[i].pop_back();
 		}
 	}
@@ -102,7 +102,6 @@ void unreserveSpecs(Brigade brigade) {
 
 float getMaxPossiblePayoff(float remainingBudget) {
 	float payoff = 0.0;
-	std::cout << remainingBudget << std::endl;
 
 	for (int i = 0; i < BRIGADES_AMOUNT; i++) {
 		float localPayoff = 0.0;
