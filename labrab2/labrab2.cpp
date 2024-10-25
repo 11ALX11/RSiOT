@@ -17,10 +17,10 @@ const int specAmount = 30;
 float* specDayPay;
 specTypes* types;
 
-const float budget = 10000;
+const float budget = 3000; //3500;
 
-const float specBonus = 100;
-const float brigadeBonus = 1243;
+const float specBonus = 101;
+const float brigadeBonus = 1000.1;
 
 struct Brigade {
 	int counts[SPEC_TYPES_AMOUNT];
@@ -39,7 +39,7 @@ const int BRIGADES_AMOUNT = 3; // >= 3
 Brigade brigades[BRIGADES_AMOUNT] = {
 	{{2, 3, 2}},
 	{{4, 1, 2}},
-	{{3, 3, 4}}
+	{{1, 2, 4}}
 };
 
 
@@ -100,8 +100,40 @@ void unreserveSpecs(Brigade brigade) {
 }
 
 
+int getLeftoverSpecsAmountForBudget(float budget) {
+	float remainingBudget = budget;
+	int amount = 0;
+
+	std::vector<std::pair<float, int>> specialists;
+
+	for (int i = 0; i < SPEC_TYPES_AMOUNT; i++) {
+		for (int j = 0; j < specAmount; j++) {
+			if (std::find(reservation[i].begin(), reservation[i].end(), j) == reservation[i].end()) {
+				specialists.push_back({ specDayPay[j], j });
+			}
+		}
+	}
+
+	std::sort(specialists.begin(), specialists.end()); // сортировка по 1-у элементу пары
+
+	for (const auto& specialist : specialists) {
+		budget -= specialist.first;
+		if (budget >= 0) {
+			amount++;
+		}
+		else {
+			break;
+		}
+	}
+
+	return amount;
+}
+
+
 float getMaxPossiblePayoff(float remainingBudget) {
 	float payoff = 0.0;
+
+	payoff = getLeftoverSpecsAmountForBudget(remainingBudget) * specBonus;
 
 	for (int i = 0; i < BRIGADES_AMOUNT; i++) {
 		float localPayoff = 0.0;
