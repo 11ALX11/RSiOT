@@ -9,15 +9,18 @@ Write your code in this editor and press "Run" button to compile and execute it.
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
+#include <string>
 
 const int SPEC_TYPES_AMOUNT = 3;
 enum specTypes { Engieneer, Miner, Transporter };
 
-const int specAmount = 30;
+int specAmount;
 float* specDayPay;
 specTypes* types;
 
-const float budget = 3000; //3500;
+const float budget = 3200; //3600;
 
 const float specBonus = 101;
 const float brigadeBonus = 1000.1;
@@ -32,6 +35,14 @@ struct Brigade {
 		}
 
 		return commonCounts * specBonus + brigadeBonus;
+	}
+	std::string toString() {
+		std::string str = "{ ";
+		for (int i = 0; i < SPEC_TYPES_AMOUNT; i++) {
+			str += std::to_string(counts[i]) + " ";
+		}
+		str += "}";
+		return str;
 	}
 };
 
@@ -77,13 +88,13 @@ float reserveSpecs(Brigade brigade) {
 
 		int count = brigade.counts[i];
 		for (const auto& specialist : specialists) {
+			if (count-- <= 0) {
+				break;
+			}
+
 			cost += specialist.first;
 			reservation[i].push_back(specialist.second);
 			counts[i]++;
-
-			if (--count == 0) {
-				break;
-			}
 		}
 	}
 
@@ -100,7 +111,11 @@ void unreserveSpecs(Brigade brigade) {
 }
 
 
-int getLeftoverSpecsAmountForBudget(float budget) {
+int getLeftoverSpecsAmountForBudget(
+	float budget, 
+	std::vector<int> reservation[SPEC_TYPES_AMOUNT], 
+	bool out = false
+) {
 	float remainingBudget = budget;
 	int amount = 0;
 
@@ -108,7 +123,10 @@ int getLeftoverSpecsAmountForBudget(float budget) {
 
 	for (int i = 0; i < SPEC_TYPES_AMOUNT; i++) {
 		for (int j = 0; j < specAmount; j++) {
-			if (std::find(reservation[i].begin(), reservation[i].end(), j) == reservation[i].end()) {
+			if (
+				types[j] == i &&                                                                    // if types match AND
+				std::find(reservation[i].begin(), reservation[i].end(), j) == reservation[i].end() // if j not found in reservation[i]
+				) {
 				specialists.push_back({ specDayPay[j], j });
 			}
 		}
@@ -118,8 +136,10 @@ int getLeftoverSpecsAmountForBudget(float budget) {
 
 	for (const auto& specialist : specialists) {
 		budget -= specialist.first;
+
 		if (budget >= 0) {
 			amount++;
+			if (out) std::cout << specialist.second << " ";
 		}
 		else {
 			break;
@@ -130,18 +150,40 @@ int getLeftoverSpecsAmountForBudget(float budget) {
 }
 
 
-float getMaxPossiblePayoff(float remainingBudget) {
+float gPayoff = 0;
+float gRemainingBudget = budget;
+std::vector<int> bestReservation[SPEC_TYPES_AMOUNT];
+std::vector<Brigade> gBrigades;
+std::vector<Brigade> bestBrigades;
+
+float getMaxPossiblePayoff(float remainingBudget, float payoffDownwards = 0.0) {
 	float payoff = 0.0;
 
-	payoff = getLeftoverSpecsAmountForBudget(remainingBudget) * specBonus;
+	payoff = getLeftoverSpecsAmountForBudget(remainingBudget, reservation) * specBonus;
+
+	if (payoffDownwards + payoff > gPayoff) {
+		gPayoff = payoffDownwards + payoff;
+		gRemainingBudget = remainingBudget;
+		bestBrigades = gBrigades;
+
+		for (int i = 0; i < SPEC_TYPES_AMOUNT; i++) {
+			bestReservation[i] = reservation[i];
+		}
+	}
+
 
 	for (int i = 0; i < BRIGADES_AMOUNT; i++) {
 		float localPayoff = 0.0;
 		float resBudget = reserveSpecs(brigades[i]);
 
 		if (resBudget > 0 && remainingBudget - resBudget >= 0) {
+			gBrigades.push_back(brigades[i]);
+
 			localPayoff = brigades[i].getBrigadePayoff()
-				+ getMaxPossiblePayoff(remainingBudget - resBudget);
+				+ getMaxPossiblePayoff(	remainingBudget - resBudget, 
+										payoffDownwards + brigades[i].getBrigadePayoff());
+
+			gBrigades.pop_back();
 
 			if (localPayoff > payoff) {
 				payoff = localPayoff;
@@ -157,27 +199,70 @@ float getMaxPossiblePayoff(float remainingBudget) {
 
 int main()
 {
-	//specAmount = 30; // >= 30
-	float specDayPay1[specAmount] =
-	{
-		100, 120, 140, 130, 110, 90,  105.6, 87.8,  142.1, 121.4,
-		102, 110, 130, 124, 119, 98,  102.6, 97.8,  122.1, 111.4,
-		123, 133, 144, 127, 101, 126, 145.6, 147.8, 143.2, 131.4
-	};
-	specTypes types1[specAmount] =
-	{
-		Engieneer,      Engieneer,      Engieneer,      Engieneer,      Engieneer,
-		Engieneer,      Engieneer,      Engieneer,      Engieneer,      Engieneer,
-		Miner,          Miner,          Miner,          Miner,          Miner,
-		Miner,          Miner,          Miner,          Miner,          Miner,
-		Transporter,    Transporter,    Transporter,    Transporter,    Transporter,
-		Transporter,    Transporter,    Transporter,    Transporter,    Transporter
-	};
+	// ---------------- Ввод --------------------
+	std::ifstream inputFile("input.txt");
+	if (!inputFile) {
+		std::cerr << "Не удалось открыть файл!" << std::endl;
+		return 1;
+	}
 
-	specDayPay = specDayPay1;
-	types = types1;
+	inputFile >> specAmount;
+
+	specDayPay = new float[specAmount];
+	types = new specTypes[specAmount];
+
+	for (int i = 0; i < specAmount; ++i) {
+		inputFile >> specDayPay[i];
+	}
+
+	std::string type;
+	for (int i = 0; i < specAmount; ++i) {
+		inputFile >> type;
+		if (type == "Engieneer") {
+			types[i] = Engieneer;
+		}
+		else if (type == "Miner") {
+			types[i] = Miner;
+		}
+		else if (type == "Transporter") {
+			types[i] = Transporter;
+		}
+		else {
+			std::cerr << "Неизвестный тип: " << type << std::endl;
+			return 1;
+		}
+	}
+
+	inputFile.close();
+	//-------------------------------------------
+
 
 	std::cout << getMaxPossiblePayoff(budget) << std::endl;
+
+
+	std::cout << "Brigades: ";
+	for (Brigade brigade : bestBrigades) {
+		std::cout << brigade.toString() << " ";
+	}
+	std::cout << std::endl;
+	for (int i = 0; i < SPEC_TYPES_AMOUNT; i++) {
+		if (i == 0) std::cout << "Engieneers   - ";
+		if (i == 1) std::cout << "Miners       - ";
+		if (i == 2) std::cout << "Transporters - ";
+
+		for (int j : bestReservation[i]) {
+			std::cout << j << " ";
+		}
+
+		std::cout << std::endl;
+	}
+	std::cout << "Add-on workers - ";
+	getLeftoverSpecsAmountForBudget(gRemainingBudget, bestReservation, true);
+	std::cout << std::endl;
+
+
+	delete[] specDayPay;
+	delete[] types;
 
 	return 0;
 }
