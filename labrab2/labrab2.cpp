@@ -20,7 +20,7 @@ int specAmount;
 float* specDayPay;
 specTypes* types;
 
-const float budget = 3200; //3600;
+float budget;
 
 const float specBonus = 101;
 const float brigadeBonus = 1000.1;
@@ -119,6 +119,9 @@ int getLeftoverSpecsAmountForBudget(
 	float remainingBudget = budget;
 	int amount = 0;
 
+	if (out)
+		std::cout << "Add-on workers - ";
+
 	std::vector<std::pair<float, int>> specialists;
 
 	for (int i = 0; i < SPEC_TYPES_AMOUNT; i++) {
@@ -135,15 +138,43 @@ int getLeftoverSpecsAmountForBudget(
 	std::sort(specialists.begin(), specialists.end()); // сортировка по 1-у элементу пары
 
 	for (const auto& specialist : specialists) {
-		budget -= specialist.first;
+		remainingBudget -= specialist.first;
 
-		if (budget >= 0) {
+		if (remainingBudget >= 0) {
 			amount++;
-			if (out) std::cout << specialist.second << " ";
+			if (out) 
+				std::cout << specialist.second << "(" << specialist.first << ") ";
 		}
 		else {
 			break;
 		}
+	}
+
+	if (out) {
+		float cost = 0.0;
+		for (int i = 0; i < amount; i++)
+			cost += specialists[i].first;
+
+		std::cout << "; \n\t" << specBonus << " per spec = "
+			<< specBonus << " * " << amount << " = "
+			<< specBonus * amount << std::endl
+			<< "\tcost = " << cost << ", remaining budget = " << budget - cost
+			<< std::endl << std::endl;
+
+		if (amount < specialists.size())
+			std::cout << "Workers unemployed: ";
+		else
+			std::cout << "Everyone employed." << std::endl;
+
+		for (int i = amount; i < specialists.size(); i++) {
+			std::cout << specialists[i].second << "(" 
+				<< specialists[i].first << ") ";
+		}
+
+		if (amount < specialists.size())
+			std::cout << "; \n\t" 
+				<< "budget diff for next worker = " << remainingBudget
+				<< std::endl << std::endl;
 	}
 
 	return amount;
@@ -197,16 +228,15 @@ float getMaxPossiblePayoff(float remainingBudget, float payoffDownwards = 0.0) {
 }
 
 
-int main()
-{
+int inputFromFile(std::string file) {
 	// ---------------- Ввод --------------------
-	std::ifstream inputFile("input.txt");
+	std::ifstream inputFile(file);
 	if (!inputFile) {
 		std::cerr << "Не удалось открыть файл!" << std::endl;
 		return 1;
 	}
 
-	inputFile >> specAmount;
+	inputFile >> specAmount >> budget;
 
 	specDayPay = new float[specAmount];
 	types = new specTypes[specAmount];
@@ -236,29 +266,49 @@ int main()
 	inputFile.close();
 	//-------------------------------------------
 
-
-	std::cout << getMaxPossiblePayoff(budget) << std::endl;
-
-
+	return 0;
+}
+void outputStatsInConsole() {
+	float remainingBudget = budget;
+	std::cout << "Budget = " << remainingBudget << std::endl << std::endl;
 	std::cout << "Brigades: ";
 	for (Brigade brigade : bestBrigades) {
 		std::cout << brigade.toString() << " ";
 	}
-	std::cout << std::endl;
+	std::cout << "; \n\t" << brigadeBonus << " per brigade = "
+		<< brigadeBonus << " * " << bestBrigades.size() << " = "
+		<< brigadeBonus * bestBrigades.size() << std::endl << std::endl;
 	for (int i = 0; i < SPEC_TYPES_AMOUNT; i++) {
+		float cost = 0.0;
+
 		if (i == 0) std::cout << "Engieneers   - ";
 		if (i == 1) std::cout << "Miners       - ";
 		if (i == 2) std::cout << "Transporters - ";
 
 		for (int j : bestReservation[i]) {
-			std::cout << j << " ";
+			std::cout << j << "(" << specDayPay[j] << ") ";
+			cost += specDayPay[j];
 		}
 
-		std::cout << std::endl;
+		remainingBudget = remainingBudget - cost;
+		std::cout << "; \n\t" << specBonus << " per spec = "
+			<< specBonus << " * " << bestReservation[i].size() << " = "
+			<< specBonus * bestReservation[i].size() << std::endl
+			<< "\tcost = " << cost << ", remaining budget = " << remainingBudget
+			<< std::endl << std::endl;
 	}
-	std::cout << "Add-on workers - ";
 	getLeftoverSpecsAmountForBudget(gRemainingBudget, bestReservation, true);
-	std::cout << std::endl;
+}
+
+
+int main()
+{
+	if (inputFromFile("input.txt"))
+		return 1;
+
+
+	std::cout << "Max payoff = " << getMaxPossiblePayoff(budget) << std::endl;
+	outputStatsInConsole();
 
 
 	delete[] specDayPay;
