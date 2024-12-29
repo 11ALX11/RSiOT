@@ -122,22 +122,27 @@ int __cdecl main(void)
 
                 std::cout << request;
 
-                if (request.substr(0, 12) == "ADD_TEACHER") {
-                    teacherController.addTeacher(request.substr(12));
-                    response = "Teacher added.\n";
+                try {
+                    if (request.find("ADD_TEACHER") != std::string::npos) {
+                        teacherController.addTeacher(request.substr(request.find("ADD_TEACHER") + 12));
+                        response = "Teacher added.\n";
+                    }
+                    else if (request.find("GET_TEACHERS") != std::string::npos) {
+                        response = teacherController.displayTeachers();
+                    }
+                    else if (request.find("ADD_STUDENT") != std::string::npos) {
+                        studentController.addStudent(request.substr(request.find("ADD_STUDENT") + 12));
+                        response = "Student added.\n";
+                    }
+                    else if (request.find("GET_STUDENTS") != std::string::npos) {
+                        response = studentController.displayStudents();
+                    }
+                    else {
+                        response = "Unknown command.\n";
+                    }
                 }
-                else if (request.substr(0, 13) == "GET_TEACHERS") {
-                    response = teacherController.displayTeachers();
-                }
-                else if (request.substr(0, 12) == "ADD_STUDENT") {
-                    studentController.addStudent(request.substr(12));
-                    response = "Student added.\n";
-                }
-                else if (request.substr(0, 13) == "GET_STUDENTS") {
-                    response = studentController.displayStudents();
-                }
-                else {
-                    response = "Unknown command.\n";
+                catch (const std::invalid_argument& e) {
+                    response = e.what();
                 }
 
                 // buffer back to the sender

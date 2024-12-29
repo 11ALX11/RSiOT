@@ -3,7 +3,7 @@
 #include <vector>
 #include <sstream>
 
-// преподавателям(имя, фамилия, преподаваемые предметы, возраст, часы и даты занятий и т.д.)
+// преподавателям(имя, фамилия, преподаваемые предметы, возраст и т.д.)
 class TeacherModel {
 public:
     int id;
@@ -11,7 +11,6 @@ public:
     std::string lastName;
     std::vector<std::string> subjects;
     int age;
-    //
 
     TeacherModel(const std::string& fn, const std::string& ln, int a, const std::vector<std::string>& sub)
         : id(0), firstName(fn), lastName(ln), age(a), subjects(sub) {}

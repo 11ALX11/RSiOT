@@ -7,8 +7,27 @@ class TeacherController {
 private:
     TeacherDAO teacherDAO;
 
+    bool validateTeacherData(const std::string& data) {
+        std::istringstream iss(data);
+        std::string firstName, lastName;
+        int age;
+
+        std::getline(iss, firstName, ',');
+        std::getline(iss, lastName, ',');
+        if (!(iss >> age)) return false; // Проверка на корректность возраста
+
+        if (firstName.empty() || lastName.empty() || age < 0) {
+            return false; // Проверка на пустые поля и некорректный возраст
+        }
+        return true;
+    }
+
 public:
     void addTeacher(const std::string& data) {
+        if (!validateTeacherData(data)) {
+            throw std::invalid_argument("Invalid teacher data.");
+        }
+
         std::istringstream iss(data);
         std::string firstName, lastName, subjectsInput;
         int age;
@@ -22,7 +41,11 @@ public:
         std::vector<std::string> subjects;
         std::istringstream subjectStream(subjectsInput);
         std::string subject;
-        while (std::getline(subjectStream, subject, ',')) {
+        while (std::getline(subjectStream, subject, ';')) {
+            subject.erase(std::remove_if(subject.begin(), subject.end(), ::isspace), subject.end());
+            if (subject.empty()) {
+                continue;
+            }
             subjects.push_back(subject);
         }
 
