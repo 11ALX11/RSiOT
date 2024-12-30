@@ -7,7 +7,7 @@ class TeacherController {
 private:
     TeacherDAO teacherDAO;
 
-    bool validateTeacherData(const std::string& data) {
+    bool validateAddTeacherData(const std::string& data) {
         std::istringstream iss(data);
         std::string firstName, lastName;
         int age;
@@ -24,7 +24,7 @@ private:
 
 public:
     void addTeacher(const std::string& data) {
-        if (!validateTeacherData(data)) {
+        if (!validateAddTeacherData(data)) {
             throw std::invalid_argument("Invalid teacher data.");
         }
 

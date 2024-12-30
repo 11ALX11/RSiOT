@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .response { margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Управление Студентами</h1>
+    <form id="studentForm">
+        <label for="studentName">Имя студента:</label>
+        <input type="text" id="studentName" required>
+        <br>
+        <label for="studentLastName">Фамилия студента:</label>
+        <input type="text" id="studentLastName" required>
+        <br>
+        <label for="studentGroup">Группа студента:</label>
+        <input type="text" id="studentGroup" required>
+        <br>
+        <button type="submit">Добавить Студента</button>
+    </form>
+    <div class="response" id="responseArea"></div>
+
+    <button id="getStudentsButton">Получить Студентов</button>
+    
+	<table id="studentsTable">
+        <thead>
+            <tr>
+                <th>Имя</th>
+                <th>Фамилия</th>
+                <th>Группа</th>
+                <th>Предметы</th>
+            </tr>
+        </thead>
+        <tbody>
+			<tr>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+		</tbody>
+    </table>
+
+    <script>
+        document.getElementById('studentForm').addEventListener('submit', function(event) {
+            const firstName = document.getElementById('studentName').value;
+            const lastName = document.getElementById('studentLastName').value;
+            const group = document.getElementById('studentGroup').value;
+
+            fetch('http://localhost:9091/ADD_STUDENT', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ firstName, lastName, group })
+            })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('responseArea').innerText = data;
+				alert(data);
+                loadTeachers(); // Обновляем таблицу после добавления
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+            });
+        });
+
+        document.getElementById('getStudentsButton').addEventListener('click', function() {
+            fetch('http://localhost:9091/GET_STUDENTS')
+			.then(response => response.text())
+			.then(data => {
+				// Разделяем данные на строки и удаляем пустые
+				const students = data.replace(/"/g, '').split("\\n").filter(line => line.trim() !== '');
+				const tbody = document.querySelector('#studentsTable tbody');
+				tbody.innerHTML = ''; // Очищаем таблицу
+	
+				students.forEach(student => {
+					if (!student.trim()) {
+						return; // Пропускаем пустую строку
+					}
+					
+					// Разделяем данные студента по запятой
+					const [id, firstName, lastName, group, subjects] = student.split(',');
+					
+					// Форматируем предметы, если они есть
+					const subjectList = subjects ? subjects.split(';').filter(sub => sub !== '').join(', ') : '';
+	
+					// Создаем строку таблицы
+					const row = `<tr>
+						<td>${firstName}</td>
+						<td>${lastName}</td>
+						<td>${group}</td>
+						<td>${subjectList}</td>
+					</tr>`;
+					
+					tbody.innerHTML += row; // Добавляем строку в таблицу
+				});
+			})
+			.catch(error => {
+				console.error('Ошибка:', error);
+			});
+        });
+		
+		 document.getElementById('getStudentsButton').click();
+    </script>
+</body>
+</html>

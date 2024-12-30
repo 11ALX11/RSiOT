@@ -8,7 +8,7 @@ class StudentController {
 private:
     StudentDAO studentDAO;
 
-    bool validateStudentData(const std::string& data) {
+    bool validateAddStudentData(const std::string& data) {
         std::istringstream iss(data);
         std::string firstName, lastName;
 
@@ -22,7 +22,7 @@ private:
 
 public:
     void addStudent(const std::string& data) {
-        if (!validateStudentData(data)) {
+        if (!validateAddStudentData(data)) {
             throw std::invalid_argument("Invalid student data.");
         }
 

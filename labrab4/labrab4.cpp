@@ -16,8 +16,8 @@
 #pragma comment (lib, "Ws2_32.lib")
 // #pragma comment (lib, "Mswsock.lib")
 
-#define DEFAULT_BUFLEN 512
-#define DEFAULT_PORT "27015"
+#define DEFAULT_BUFLEN 2048
+#define DEFAULT_PORT "9090"
 
 /**
 * Необходимо разработать сервер для хранения данных по заданному варианту.
@@ -59,7 +59,7 @@ int __cdecl main(void)
     hints.ai_flags = AI_PASSIVE;
 
     // Resolve the server address and port
-    iResult = getaddrinfo(NULL, "9090", &hints, &result);
+    iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
     if (iResult != 0) {
         printf("getaddrinfo failed with error: %d\n", iResult);
         WSACleanup();

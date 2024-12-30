@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Management</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .response { margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Управление Преподавателями</h1>
+    <form id="teacherForm">
+        <label for="teacherName">Имя преподавателя:</label>
+        <input type="text" id="teacherName" required>
+        <br>
+        <label for="teacherLastName">Фамилия преподавателя:</label>
+        <input type="text" id="teacherLastName" required>
+        <br>
+        <label for="teacherAge">Возраст:</label>
+        <input type="number" id="teacherAge" required>
+        <br>
+        <button type="submit">Добавить Преподавателя</button>
+    </form>
+    <div class="response" id="responseArea"></div>
+
+    <button id="getTeachersButton">Получить Преподавателей</button>
+    <table id="teachersTable">
+        <thead>
+            <tr>
+                <th>Имя</th>
+                <th>Фамилия</th>
+                <th>Возраст</th>
+				<th>Предметы</th>
+            </tr>
+        </thead>
+        <tbody>
+			<tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+		</tbody>
+    </table>
+
+    <script>
+        document.getElementById('teacherForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const firstName = document.getElementById('teacherName').value;
+            const lastName = document.getElementById('teacherLastName').value;
+            const age = document.getElementById('teacherAge').value;
+
+            fetch('http://localhost:9091/ADD_TEACHER', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ firstName, lastName, age })
+            })
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('responseArea').innerText = data;
+				alert(data);
+                loadTeachers(); // Обновляем таблицу после добавления
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+            });
+        });
+
+        document.getElementById('getTeachersButton').addEventListener('click', loadTeachers);
+
+        function loadTeachers() {
+            fetch('http://localhost:9091/GET_TEACHERS')
+                .then(response => response.json())
+                .then(data => {
+					// Разделяем данные на строки и удаляем пустые
+					const teachers = data.replace(/"/g, '').split("\n").filter(line => line.trim() !== '');
+                    const tbody = document.querySelector('#teachersTable tbody');
+                    tbody.innerHTML = ''; // Очищаем таблицу
+
+                    teachers.forEach(teacher => {
+						const [id, firstName, lastName, age, subjects] = teacher.split(',');
+						const subjectList = subjects ? subjects.split(';').filter(sub => sub !== '').join(', ') : '';
+						
+                        const row = `<tr><td>${firstName}</td><td>${lastName}</td><td>${age}</td><td>${subjectList}</td></tr>`;
+                        tbody.innerHTML += row;
+                    });
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                });
+        }
+		
+		loadTeachers();
+    </script>
+</body>
+</html>
